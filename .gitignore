@@ -1,0 +1,82 @@
+# Ignore Python cache, environments, and local configuration files
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+
+# Environment & credentials
+.env
+.env.local
+.env.*
+*.env
+
+# Jupyter / Colab checkpoints
+.ipynb_checkpoints/
+*.ipynb_checkpoints/
+
+# Cache & logs
+*.log
+*.csv~
+*.tmp
+*.bak
+*.swp
+.cache/
+logs/
+debug.log
+
+# System / editor junk
+.DS_Store
+Thumbs.db
+*.sqlite3
+*.db
+*.dbstore
+
+# Build / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Pyre / mypy / pytest
+.pyre/
+.mypy_cache/
+.pytest_cache/
+
+# VSCode / PyCharm / IDE settings
+.vscode/
+.idea/
+
+# Colab / Google Drive
+.gdrive/
+drive-download-*/
+
+# Data folders (large local or temporary)
+data/raw/*
+data/tmp/*
+!data/raw/.gitkeep
+
+# Results & output artifacts
+results/*.csv
+results/*.png
+results/*.json
+reports/*.pdf
+reports/*.tex~
+reports/*.aux
+reports/*.log
+
+# OS generated files
+ehthumbs.db
+Icon?
