@@ -49,32 +49,6 @@ Developed as part of **CP322: Machine Learning**, the project combines multiple 
 
 ---
 
-## 🧱 Repository Structure
-esrb-wizard/
-├── data/
-│ ├── raw/ # Original Kaggle + API datasets
-│ ├── processed/ # Cleaned + merged data
-├── notebooks/
-│ ├── 01_preprocessing.ipynb
-│ ├── 02_eda.ipynb
-│ ├── 03_modeling_regression.ipynb
-│ └── 04_explainability.ipynb
-├── src/
-│ ├── preprocess_utils.py
-│ ├── model_utils.py
-│ └── shap_analysis.py
-├── results/
-│ ├── metrics.csv
-│ └── shap_summary.png
-├── reports/
-│ ├── ieee_report.tex
-│ └── slides/
-├── requirements.txt
-└── README.md
-
-
----
-
 ## ⚙️ Setup & Installation
 
 ```bash
