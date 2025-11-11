@@ -14,11 +14,13 @@ from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+import warnings
 
 import numpy as np
 import pandas as pd
 import requests
 from dotenv import load_dotenv
+from pandas.errors import ParserWarning
 from rapidfuzz import fuzz, process
 
 STOP_TOKENS = {"the", "a", "an", "and"}
@@ -97,7 +99,9 @@ def ensure_directory(path: Path) -> None:
 
 def load_steam_games(paths: DataPaths) -> pd.DataFrame:
     """Load and clean the Steam Games dataset."""
-    df = safe_read_csv(paths.steam_games)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", ParserWarning)
+        df = safe_read_csv(paths.steam_games, index_col=False, low_memory=False)
     if df.empty:
         return df
 
@@ -341,8 +345,9 @@ def fuzzy_enrich(
 
 
 IGDB_GAMES_URL = "https://api.igdb.com/v4/games"
-IGDB_CONTENT_URL = "https://api.igdb.com/v4/content_descriptors"
+IGDB_CONTENT_URL = "https://api.igdb.com/v4/age_rating_content_descriptions"
 IGDB_GENRE_URL = "https://api.igdb.com/v4/genres"
+IGDB_AGE_RATINGS_URL = "https://api.igdb.com/v4/age_ratings"
 
 
 def igdb_request(
@@ -363,13 +368,14 @@ def igdb_request(
         return None
 
 
-def fetch_descriptor_names(
+def fetch_age_descriptor_names(
     session: requests.Session, headers: Dict[str, str], descriptor_ids: Sequence[int]
 ) -> List[str]:
-    """Translate descriptor IDs into human-readable names."""
-    if not descriptor_ids:
+    """Translate age rating descriptor IDs into human-readable names."""
+    valid_ids = [int(i) for i in descriptor_ids if pd.notna(i)]
+    if not valid_ids:
         return []
-    ids_list = ", ".join(str(int(i)) for i in descriptor_ids if pd.notna(i))
+    ids_list = ", ".join(str(i) for i in valid_ids)
     body = f"fields name; where id = ({ids_list});"
     payload = igdb_request(session, IGDB_CONTENT_URL, headers, body)
     if not payload:
@@ -381,14 +387,31 @@ def fetch_genre_names(
     session: requests.Session, headers: Dict[str, str], genre_ids: Sequence[int]
 ) -> List[str]:
     """Translate genre IDs into names."""
-    if not genre_ids:
+    valid_ids = [int(i) for i in genre_ids if pd.notna(i)]
+    if not valid_ids:
         return []
-    ids_list = ", ".join(str(int(i)) for i in genre_ids if pd.notna(i))
+    ids_list = ", ".join(str(i) for i in valid_ids)
     body = f"fields name; where id = ({ids_list});"
     payload = igdb_request(session, IGDB_GENRE_URL, headers, body)
     if not payload:
         return []
     return [item.get("name") for item in payload if item.get("name")]
+
+
+def fetch_age_rating_details(
+    session: requests.Session, headers: Dict[str, str], rating_ids: Sequence[int]
+) -> Dict[int, Dict]:
+    """Fetch rating metadata (rating, category, descriptor IDs) for age ratings."""
+    valid_ids = [int(i) for i in rating_ids if pd.notna(i)]
+    if not valid_ids:
+        return {}
+    ids_list = ", ".join(str(i) for i in valid_ids)
+    body = "fields rating, category, content_descriptions; "
+    body += f"where id = ({ids_list});"
+    payload = igdb_request(session, IGDB_AGE_RATINGS_URL, headers, body)
+    if not payload:
+        return {}
+    return {item["id"]: item for item in payload if item.get("id") is not None}
 
 
 def add_igdb_descriptors(
@@ -419,23 +442,50 @@ def add_igdb_descriptors(
             break
 
     igdb_records = []
+    failure_streak = 0
     for normalized, title in title_lookup.items():
-        body = f'search "{title}"; fields name,content_descriptions,genres,summary; limit 1;'
+        body = f'search "{title}"; fields name,summary,genres,age_ratings; limit 1;'
         payload = igdb_request(session, IGDB_GAMES_URL, headers, body)
         if not payload:
+            failure_streak += 1
+            if failure_streak >= 5:
+                log(
+                    "Multiple consecutive IGDB errors encountered. "
+                    "Stopping IGDB enrichment early."
+                )
+                break
             continue
+        failure_streak = 0
+
         game = payload[0]
-        descriptor_ids = game.get("content_descriptions", [])
         genre_ids = game.get("genres", [])
-        descriptor_names = fetch_descriptor_names(session, headers, descriptor_ids)
+        rating_ids = game.get("age_ratings", [])
+        rating_details = fetch_age_rating_details(session, headers, rating_ids)
+
+        descriptor_ids: List[int] = []
+        rating_labels: List[str] = []
+        for rating in rating_details.values():
+            descriptor_ids.extend(rating.get("content_descriptions") or [])
+            rating_value = rating.get("rating")
+            category_value = rating.get("category")
+            label_bits = []
+            if category_value is not None:
+                label_bits.append(f"cat:{category_value}")
+            if rating_value is not None:
+                label_bits.append(f"rating:{rating_value}")
+            if label_bits:
+                rating_labels.append("_".join(label_bits))
+
+        descriptor_names = fetch_age_descriptor_names(session, headers, descriptor_ids)
         genre_names = fetch_genre_names(session, headers, genre_ids)
         igdb_records.append(
             {
                 "steam_title_normalized": normalized,
                 "igdb_name": game.get("name"),
                 "igdb_summary": game.get("summary"),
-                "igdb_descriptors": "; ".join(descriptor_names),
-                "igdb_genres": "; ".join(genre_names),
+                "igdb_descriptors": "; ".join(sorted(set(descriptor_names))),
+                "igdb_genres": "; ".join(sorted(set(genre_names))),
+                "igdb_age_ratings": "; ".join(sorted(set(rating_labels))),
             }
         )
         time.sleep(0.25)  # Politeness delay to avoid rate limits.
