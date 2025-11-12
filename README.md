@@ -65,40 +65,7 @@ SHAP analysis to interpret feature importance and direction of influence.
 
 Visualize how features like price, age rating, and genre affect engagement.
 
-🧱 Project Structure
-esrb-wizard/
-├── data/
-│   ├── raw/                  # Original datasets from Kaggle + API
-│   ├── processed/            # Cleaned, merged datasets
-│   └── .gitkeep
-│
-├── notebooks/
-│   ├── 01_preprocessing.ipynb
-│   ├── 02_eda.ipynb
-│   ├── 03_modeling_regression.ipynb          # Final version
-│   ├── 03a_model_demo_colab.ipynb            # Working demo
-│   └── 04_explainability.ipynb
-│
-├── src/
-│   ├── train_baseline_model.py               # Script version of final model
-│   ├── preprocess_utils.py
-│   ├── shap_analysis.py
-│   └── model_utils.py
-│
-├── results/
-│   ├── metrics.csv
-│   ├── shap_summary.png
-│   └── feature_importance.png
-│
-├── reports/
-│   ├── ieee_report.tex
-│   ├── ieee_report.pdf
-│   └── slides/
-│
-├── .gitignore
-├── LICENSE.md
-├── requirements.txt
-└── README.md
+🧱 Steps to Install
 
 ```bash
 # Clone the repository
