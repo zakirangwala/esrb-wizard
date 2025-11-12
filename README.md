@@ -49,23 +49,9 @@ Developed as part of **CP322: Machine Learning**, the project combines multiple 
 
 ---
 
-RandomForestRegressor – Baseline model for playtime prediction.
 
-XGBoost Regressor – Advanced model with tuned hyperparameters.
 
-Model Evaluation
-
-Metrics: R², RMSE, MAE.
-
-Cross-validation for robustness.
-
-Explainability
-
-SHAP analysis to interpret feature importance and direction of influence.
-
-Visualize how features like price, age rating, and genre affect engagement.
-
-🧱 Steps to Install
+## 🧱 Steps to Install
 
 ```bash
 # Clone the repository
