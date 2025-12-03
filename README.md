@@ -4,7 +4,7 @@
 
 This project explores how game metadata — such as tags, genres, pricing, and ESRB-like age ratings — can predict **player engagement (average playtime)** and reveal which features most influence a game's success.
 
-Developed as part of **CP322: Machine Learning**, the project combines multiple datasets (Steam metadata, ESRB ratings, and API-sourced content descriptors) into a unified modeling pipeline.
+Developed as part of **CP322: Machine Learning**, the project combines multiple datasets (Steam metadata & ESRB content ratings) into a unified modeling pipeline.
 
 ---
 
@@ -22,33 +22,39 @@ Developed as part of **CP322: Machine Learning**, the project combines multiple 
 |--------|--------------|
 | [Steam Games Dataset](https://www.kaggle.com/datasets/fronkongames/steam-games-dataset) | Core dataset containing price, owners, playtime, tags, and genres. |
 | [Video Games Rating by ESRB](https://www.kaggle.com/datasets/imohtn/video-games-rating-by-esrb) | ESRB maturity ratings for merging via game title or fuzzy match. |
-| [Steam Achievement Stats](https://www.kaggle.com/datasets/patrickgendotti/steam-achievementstatscom-rankings) | Engagement features (achievement completion rates). |
-| [IGDB API](https://api-docs.igdb.com/#age-rating-content-description) | Optional: Additional ESRB content descriptors via API. |
 
 ---
 
 ## 🧠 Methods
 
-1. **Data Cleaning and Preprocessing**
-   - Drop missing or zero playtime values.  
-   - Normalize numeric columns (Price, Owners, Age).  
-   - One-hot encode Tags, Genres, and Categories arrays.  
-   - Merge datasets on game `Name` or `AppID`.
+1. **Steam Data Cleaning and Preprocessing**
+   - Drop games missing a title or unique Steam ID numnber
+   - Drop columns that will create noise or had strong multicolinearity
+   - Simplified certain column values
+   - Drop all non-english games
+   - One-hot encode Genres, and Categories arrays
+   - Drop missing values across all other features
+  
+2. **ESRB Data Cleaning and Preprocessing**
+   - Drop rows with missing values
+   - Drop ESRB age and console
 
-2. **Model Training**
-   - **RandomForestRegressor** – Baseline model for playtime prediction.  
-   - **XGBoost Regressor** – Advanced model with tuned hyperparameters.
+3. **Classification**
+   - **Dataset** - Cleansed Steam dataset
+   - **RandomForestRegressor** – Trained on the basic dataset, a random undersample and random SMOTE oversample
+   - **XGBoost Regressor** – Trained on the basic dataset, a random undersample and random SMOTE oversample
+   - **LightGBM Regressor** – Trained on the basic dataset, a random undersample and random SMOTE oversample
+   - **Performance Metrics** - PR-AUC, Precision, Recall, F1-Score
+   - **Explainability** - SHAP analysis, visualize if mature themes affect engagement.
 
-3. **Model Evaluation**
-   - Metrics: R², RMSE, MAE.  
-   - Cross-validation for robustness.
-
-4. **Explainability**
-   - SHAP analysis to interpret feature importance and direction of influence.  
-   - Visualize how features like price, age rating, and genre affect engagement.
+4. **Regression**
+   - **Dataset** - ESRB dataset fuzzy-matched against subset of Steam dataset with non-zero playtime in past two weeks
+   - **XGBoost Regressor** – Trained on the basic dataset, with IQR outliers removed (and each of these with log-transformed y)
+   - **LightGBM Regressor** – Trained on the basic dataset, with IQR outliers removed (and each of these with log-transformed y)
+   - **Performance Metrics** - MSE, RMSE, MAE, R^2
+   - **Explainability** - SHAP analysis, visualize if mature themes affect engagement (before and after ablation)
 
 ---
-
 
 
 ## 🧱 Steps to Install
